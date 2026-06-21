@@ -1,191 +1,627 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alight Motion Pro FREE - Editor IA Completo</title>
+    <title>Sigma VD - Video Editor</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
-        body { margin:0; background:#0a0a0a; color:#0f0; font-family:monospace; overflow:hidden; }
-        #ui { display:flex; height:100vh; }
-        #preview { flex:1; background:#111; display:flex; align-items:center; justify-content:center; position:relative; }
-        canvas { border:3px solid #0f0; box-shadow:0 0 30px #0f0; max-width:95%; max-height:85vh; image-rendering: pixelated; }
-        #sidebar { width:350px; background:#1a1a1a; padding:15px; overflow-y:auto; border-left:2px solid #0f0; }
-        button, input { width:100%; padding:12px; margin:8px 0; background:#222; color:#0f0; border:1px solid #0f0; cursor:pointer; font-size:14px; }
-        button:hover { background:#0f0; color:#000; }
-        .panel { background:#222; padding:12px; margin:12px 0; border:1px solid #0f0; border-radius:4px; }
-        .layer-item { padding:8px; background:#111; margin:4px 0; display:flex; justify-content:space-between; }
+        /* Using Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111; /* Dark background for the app */
+        }
+        
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2c2c2c;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Create a fake "desktop" background to show transparency */
+        html {
+            background: url('https://placehold.co/1920x1080/4a5568/a3a3a3?text=Desktop+Background') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* Glassmorphism/Transparent effect */
+        .glass-panel {
+            background-color: rgba(23, 23, 23, 0.75); /* Dark, semi-transparent background */
+            backdrop-filter: blur(12px); /* The "blur-behind" effect */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+        }
+
+        /* Simple icon component styling */
+        .icon {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2;
+        }
+        .icon-sm {
+            width: 12px;
+            height: 12px;
+            stroke-width: 2;
+        }
+
+        /* AI-themed colors */
+        .ai-purple {
+            color: #c084fc; /* purple-400 */
+        }
+        .ai-button {
+            background-color: #a855f7; /* purple-600 */
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .ai-button:hover {
+            background-color: #9333ea; /* purple-700 */
+        }
+        
+        /* Tab styling */
+        .tab-button {
+            @apply px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-100 hover:border-gray-500;
+        }
+        .tab-button.active {
+            @apply text-white border-cyan-400;
+        }
+        
+        /* Simple loading spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-left-color: #22d3ee; /* cyan-400 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Timeline Track Header */
+        .track-header {
+            background-color: rgba(30, 30, 30, 0.7);
+        }
     </style>
 </head>
-<body>
-<div id="ui">
-    <div id="preview">
-        <canvas id="canvas" width="1280" height="720"></canvas>
-        <video id="vid" style="display:none;"></video>
+<body class="text-gray-300 antialiased h-screen overflow-hidden flex flex-col">
+
+    <!-- Main Application Container (Larger - less margin/padding) -->
+    <div class="flex flex-col h-screen p-3 m-2 rounded-xl glass-panel shadow-2xl overflow-hidden">
+
+        <!-- Header / Menu Bar -->
+        <header class="flex-shrink-0 flex items-center justify-between pb-2 border-b border-gray-700/50">
+            <!-- Logo and App Name -->
+            <div class="flex items-center space-x-3">
+                <svg class="w-6 h-6 text-cyan-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                <h1 class="text-xl font-bold text-gray-100">Sigma VD</h1>
+            </div>
+            
+            <!-- Main Menu -->
+            <nav class="flex items-center text-sm space-x-4">
+                <a href="#" class="px-3 py-1 hover:bg-gray-700/50 rounded-md">File</a>
+                <a href="#" class="px-3 py-1 hover:bg-gray-700/50 rounded-md">Edit</a>
+                <a href="#" class="px-3 py-1 hover:bg-gray-700/50 rounded-md">View</a>
+                <a href="#" class="px-3 py-1 hover:bg-gray-700/50 rounded-md">Playback</a>
+                <a href="#" class="px-3 py-1 hover:bg-gray-700/50 rounded-md">Workspace</a>
+                <a href="#" class="px-3 py-1 hover:bg-gray-700/50 rounded-md">Help</a>
+            </nav>
+
+            <!-- Page Tabs (like Resolve's) -->
+            <div class="flex items-center space-x-1 bg-gray-900/50 p-1 rounded-lg">
+                <button class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-700/70 rounded-md">Media</button>
+                <button class="px-3 py-1 text-sm text-white bg-cyan-600/50 rounded-md shadow">Edit</button>
+                <button class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-700/70 rounded-md">Color</button>
+                <button class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-700/70 rounded-md">Effects</button>
+                <button class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-700/70 rounded-md">Audio</button>
+                <button class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-700/70 rounded-md">Deliver</button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex pt-3 gap-3 overflow-hidden">
+
+            <!-- (MODIFIED) Left Panel: Tabbed Media/Effects/AI -->
+            <div class="w-1/4 flex flex-col bg-gray-900/60 rounded-lg overflow-hidden border border-gray-700/30">
+                <!-- Panel Tabs -->
+                <div class="flex-shrink-0 border-b border-gray-700/50">
+                    <nav class="flex -mb-px">
+                        <button id="media-tab" class="tab-button active" data-content="media-content">Media</button>
+                        <button id="effects-tab" class="tab-button" data-content="effects-content">Effects</button>
+                        <button id="gen-ai-tab" class="tab-button" data-content="gen-ai-content">✨ AI</button>
+                    </nav>
+                </div>
+
+                <!-- Media Pool Content -->
+                <div id="media-content" class="flex-1 flex flex-col overflow-hidden">
+                    <h2 class="text-sm font-semibold p-2 border-b border-gray-700/50 flex items-center gap-2">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        Media Pool
+                    </h2>
+                    <div id="media-pool-list" class="flex-1 p-2 overflow-y-auto space-y-1">
+                        <!-- Mock Media Items -->
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs truncate">vid_001.mp4</div>
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs truncate">b-roll_lake.mov</div>
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs truncate">interview_CEO.mxf</div>
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs truncate">music_track_final.wav</div>
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs truncate">logo_animation.png</div>
+                    </div>
+                </div>
+                
+                <!-- Effects Library Content -->
+                <div id="effects-content" class="flex-1 flex-col overflow-hidden hidden">
+                    <h2 class="text-sm font-semibold p-2 border-b border-gray-700/50 flex items-center gap-2">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M3 12h18"></path><path d="M17.8 3.8l-3.5 3.5"></path><path d="M6.2 3.8l3.5 3.5"></path><path d="M6.2 20.2l3.5-3.5"></path><path d="M17.8 20.2l-3.5-3.5"></path></svg>
+                        Effects Library
+                    </h2>
+                     <div class="flex-1 p-2 overflow-y-auto space-y-1">
+                        <!-- Mock Effects -->
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs">Cross Dissolve</div>
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs">Gaussian Blur</div>
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs">3D Title</div>
+                        <div class="p-2 bg-gray-700/50 rounded-md text-xs">Lens Flare</div>
+                    </div>
+                </div>
+                
+                <!-- ✨ Generative Panel Content -->
+                <div id="gen-ai-content" class="flex-1 flex-col overflow-hidden hidden">
+                    <h2 class="text-sm font-semibold p-2 border-b border-purple-700/50 flex items-center gap-2 ai-purple">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M3 12h18"></path><path d="M17.8 3.8l-3.5 3.5"></path><path d="M6.2 3.8l3.5 3.5"></path><path d="M6.2 20.2l3.5-3.5"></path><path d="M17.8 20.2l-3.5-3.5"></path></svg>
+                        ✨ Generative
+                    </h2>
+                     <div class="flex-1 p-3 overflow-y-auto space-y-4 text-xs">
+                        <!-- Suggest Titles -->
+                        <div>
+                            <h3 class="font-semibold mb-2 text-white">Suggest Titles</h3>
+                            <button id="btn-gen-titles" class="w-full text-xs ai-button font-bold py-2 px-3 rounded-md">✨ Generate 5 Titles</button>
+                            <div id="title-suggestions" class="mt-2 space-y-1">
+                                <!-- AI content will appear here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Generate Thumbnail -->
+                        <div>
+                            <h3 class="font-semibold mb-2 text-white border-t border-gray-700/50 pt-2">Generate Thumbnail</h3>
+                            <textarea id="thumb-prompt" class="w-full bg-gray-700/50 rounded p-2 text-xs" rows="2" placeholder="e.g., 'A dramatic shot of a lake at sunset'"></textarea>
+                            <button id="btn-gen-thumb" class="w-full text-xs ai-button font-bold py-2 px-3 rounded-md mt-1">✨ Generate Image</button>
+                            <div id="thumbnail-preview" class="mt-2">
+                                <!-- AI image will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- (MODIFIED) Center Panel: Viewer -->
+            <div class="flex-1 flex flex-col gap-3 overflow-hidden">
+                <!-- (NEW) Source/Program Toggle -->
+                <div class="flex-shrink-0 flex items-center justify-center space-x-1 bg-gray-900/50 p-1 rounded-lg self-center">
+                    <button class="px-4 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-700/70 rounded-md">Source</button>
+                    <button class="px-4 py-1 text-sm text-white bg-cyan-600/50 rounded-md shadow">Program</button>
+                </div>
+
+                <div class="flex-1 flex flex-col bg-black rounded-lg overflow-hidden border border-gray-700/30">
+                    <!-- Viewer Screen -->
+                    <div class="flex-1 bg-gray-900/60 flex items-center justify-center relative">
+                        <!-- Placeholder for video -->
+                        <img src="https://placehold.co/600x400/1a1a1a/cccccc?text=Preview+Monitor" alt="Video Preview" class="max-w-full max-h-full rounded-md shadow-lg">
+                        <span class="absolute bottom-2 right-2 text-xs bg-black/50 px-2 py-1 rounded">00:01:23:14</span>
+                    </div>
+                    <!-- (NEW) Info Bar -->
+                    <div class="flex-shrink-0 p-1.5 border-t border-gray-700/50 flex items-center justify-between text-xs text-gray-400">
+                        <span>1920x1080 | 23.976 fps</span>
+                        <span>00:01:23:14 / 00:05:30:00</span>
+                    </div>
+                    <!-- Playback Controls -->
+                    <div class="flex-shrink-0 p-2 border-t border-gray-700/50 flex items-center justify-center space-x-4">
+                        <svg class="icon w-5 h-5 cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="11 19 2 12 11 5 11 19"></polygon><polygon points="22 19 13 12 22 5 22 19"></polygon></svg>
+                        <svg class="icon w-5 h-5 cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="19 20 -9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                        <svg class="icon w-8 h-8 cursor-pointer text-cyan-400 hover:text-cyan-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <svg class="icon w-5 h-5 cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                        <svg class="icon w-5 h-5 cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- (MODIFIED) Right Panel: Inspector -->
+            <div class="w-1/4 flex flex-col bg-gray-900/60 rounded-lg overflow-hidden border border-gray-700/30">
+                <!-- Panel Tabs -->
+                <div class="flex-shrink-0 border-b border-gray-700/50">
+                    <nav class="flex -mb-px">
+                        <button id="inspector-tab" class="tab-button active" data-content="inspector-content">Inspector</button>
+                        <button id="ai-tab" class="tab-button" data-content="ai-tools-content">✨ AI Tools</button>
+                    </nav>
+                </div>
+                
+                <!-- Inspector Content -->
+                <div id="inspector-content" class="flex-1 overflow-y-auto">
+                    <div class="p-3 space-y-4 text-xs">
+                        <!-- Transform Section -->
+                        <div>
+                            <h3 class="font-semibold mb-2">Transform</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label>Zoom</label>
+                                    <input type="range" class="w-2/3" min="0" max="2" step="0.01" value="1">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label>Position X</label>
+                                    <input type="number" class="w-1/3 bg-gray-700/50 rounded p-1 text-right" value="0">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label>Position Y</label>
+                                    <input type="number" class="w-1/3 bg-gray-700/50 rounded p-1 text-right" value="0">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label>Rotation</label>
+                                    <input type="number" class="w-1/3 bg-gray-700/50 rounded p-1 text-right" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- (NEW) Cropping Section -->
+                        <div>
+                            <h3 class="font-semibold mb-2 border-t border-gray-700/50 pt-3">Cropping</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label>Crop Left</label>
+                                    <input type="range" class="w-2/3" min="0" max="1" step="0.01" value="0">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label>Crop Right</label>
+                                    <input type="range" class="w-2/3" min="0" max="1" step="0.01" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- (NEW) Stabilization Section -->
+                        <div>
+                            <h3 class="font-semibold mb-2 border-t border-gray-700/50 pt-3">Stabilization</h3>
+                            <button class="w-full text-xs bg-gray-700/50 font-bold py-2 px-3 rounded-md hover:bg-gray-600/50">Analyze Clip</button>
+                        </div>
+                         <!-- Color Section -->
+                        <div>
+                            <h3 class="font-semibold mb-2 border-t border-gray-700/50 pt-3">Color</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label>Contrast</label>
+                                    <input type="range" class="w-2/3" min="0" max="2" step="0.01" value="1">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label>Saturation</label>
+                                    <input type="range" class="w-2/3" min="0" max="2" step="0.01" value="1">
+                                </div>
+                                 <div class="flex items-center justify-between">
+                                    <label>Lift</label>
+                                    <input type="color" class="w-1/3 bg-gray-700/50 rounded p-0" value="#000000">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Tools Content -->
+                <div id="ai-tools-content" class="flex-1 overflow-y-auto hidden">
+                    <div class="p-3 space-y-4 text-xs">
+                        <!-- Transcribe -->
+                        <div>
+                            <h3 class="font-semibold mb-2 text-white">Transcription</h3>
+                            <button id="btn-transcribe" class="w-full text-xs ai-button font-bold py-2 px-3 rounded-md">✨ Transcribe Selected Clip</button>
+                            <div id="transcription-output-container" class="mt-2">
+                                <textarea id="transcription-output" class="w-full bg-gray-700/50 rounded p-2 text-xs" rows="10" placeholder="Transcription will appear here..."></textarea>
+                            </div>
+                        </div>
+                        <!-- Key Moments -->
+                        <div>
+                            <h3 class="font-semibold mb-2 text-white border-t border-gray-700/50 pt-2">Analysis</h3>
+                            <button id="btn-moments" class="w-full text-xs ai-button font-bold py-2 px-3 rounded-md">✨ Find Key Moments</button>
+                            <div id="moments-output" class="mt-2 space-y-1">
+                                <!-- AI content will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- (MODIFIED) Bottom Panel: Timeline (Larger: h-2/5) -->
+        <footer class="flex-shrink-0 h-2/5 flex flex-col pt-3 overflow-hidden">
+            <div class="flex-1 flex flex-col bg-gray-900/60 rounded-lg overflow-hidden border border-gray-700/30">
+                <!-- Timeline Header -->
+                <div class="flex-shrink-0 p-2 border-b border-gray-700/50 flex items-center justify-between">
+                    <h2 class="text-sm font-semibold flex items-center gap-2">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                        Timeline: Main Sequence
+                    </h2>
+                    <!-- Timeline Tools -->
+                    <div class="flex items-center space-x-2">
+                        <button class="p-1.5 bg-gray-700/50 hover:bg-cyan-600/50 rounded-md" title="Selection Tool">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path></svg>
+                        </button>
+                        <button class="p-1.5 bg-gray-700/50 hover:bg-cyan-600/50 rounded-md" title="Blade Tool">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line></svg>
+                        </button>
+                         <button class="p-1.5 bg-gray-700/50 hover:bg-cyan-600/50 rounded-md" title="Zoom">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- (MODIFIED) Timeline Tracks Area -->
+                <div class="flex-1 flex overflow-auto">
+                    <!-- (NEW) Track Headers -->
+                    <div class="flex-shrink-0 w-24 track-header border-r border-gray-700/50 p-2 space-y-1">
+                        <!-- Mock Ruler -->
+                        <div class="h-6 flex items-center text-xs text-gray-500">Time</div>
+                        <!-- V3 -->
+                        <div class="h-8 flex items-center justify-between text-xs font-bold text-cyan-300">
+                            <span>V3</span>
+                            <div class="flex space-x-1.5 text-gray-500">
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+                            </div>
+                        </div>
+                        <!-- V2 -->
+                        <div class="h-8 flex items-center justify-between text-xs font-bold text-cyan-300">
+                            <span>V2</span>
+                             <div class="flex space-x-1.5 text-gray-500">
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+                            </div>
+                        </div>
+                        <!-- V1 -->
+                        <div class="h-10 flex items-center justify-between text-xs font-bold text-cyan-300">
+                            <span>V1</span>
+                             <div class="flex space-x-1.5 text-gray-500">
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+                            </div>
+                        </div>
+                        <!-- A1 -->
+                        <div class="h-10 flex items-center justify-between text-xs font-bold text-green-300">
+                            <span>A1</span>
+                            <div class="flex space-x-1.5 text-gray-500">
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 010 7.07"></path></svg>
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+                            </div>
+                        </div>
+                        <!-- A2 -->
+                        <div class="h-8 flex items-center justify-between text-xs font-bold text-green-300">
+                            <span>A2</span>
+                            <div class="flex space-x-1.5 text-gray-500">
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5L6 9H2v6h4l5 4V5z"></path></svg>
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+                            </div>
+                        </div>
+                        <!-- A3 -->
+                        <div class="h-8 flex items-center justify-between text-xs font-bold text-green-300">
+                            <span>A3</span>
+                            <div class="flex space-x-1.5 text-gray-500">
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5L6 9H2v6h4l5 4V5z"></path></svg>
+                                <svg class="icon-sm cursor-pointer hover:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Tracks -->
+                    <div class="flex-1 overflow-x-auto p-2 space-y-1 relative">
+                        <!-- Mock Ruler -->
+                        <div class="h-6 flex items-center text-xs text-gray-500 border-b border-gray-700/50 sticky top-0 bg-gray-900/60 z-10">
+                            <div class="w-32 text-left pl-2">00:00:00</div>
+                            <div class="w-32 text-left pl-2">00:00:02</div>
+                            <div class="w-32 text-left pl-2">00:00:04</div>
+                            <div class="w-32 text-left pl-2">00:00:06</div>
+                            <div class="w-32 text-left pl-2">00:00:08</div>
+                            <div class="w-32 text-left pl-2">00:00:10</div>
+                            <div class="w-32 text-left pl-2">00:00:12</div>
+                            <div class="w-32 text-left pl-2">00:00:14</div>
+                        </div>
+                        
+                        <!-- V3 Track -->
+                        <div class="h-8 flex items-center relative">
+                            <div class="absolute left-96 h-7 bg-pink-600/70 rounded-md border border-pink-400" style="width: 250px;">
+                                <span class="text-xs text-white p-1 truncate">logo_animation.png</span>
+                            </div>
+                        </div>
+                        <!-- V2 Track -->
+                        <div class="h-8 flex items-center relative">
+                            <div class="absolute left-32 h-7 bg-purple-600/70 rounded-md border border-purple-400" style="width: 180px;">
+                                <span class="text-xs text-white p-1 truncate">b-roll_lake.mov</span>
+                            </div>
+                        </div>
+                        <!-- V1 Track -->
+                        <div class="h-10 flex items-center relative">
+                            <!-- Mock Clips -->
+                            <div class="absolute left-0 h-9 bg-cyan-600/70 rounded-md border border-cyan-400" style="width: 310px;">
+                                <span class="text-xs text-white p-1 truncate">vid_001.mp4</span>
+                            </div>
+                             <!-- Transition -->
+                            <div class="absolute left-72 h-4 w-4 bg-white/70 -skew-x-12 z-10" title="Cross Dissolve"></div>
+                            
+                            <div class="absolute left-80 h-9 bg-cyan-600/70 rounded-md border border-cyan-400" style="width: 400px;">
+                                <span class="text-xs text-white p-1 truncate">interview_CEO.mxf</span>
+                            </div>
+                        </div>
+                        <!-- A1 Track -->
+                        <div class="h-10 flex items-center relative">
+                            <div class="absolute left-0 h-9 bg-green-600/70 rounded-md border border-green-400" style="width: 680px;">
+                                <span class="text-xs text-white p-1 truncate">[Audio for vid_001.mp4 & interview_CEO.mxf]</span>
+                            </div>
+                        </div>
+                        <!-- A2 Track -->
+                        <div class="h-8 flex items-center relative">
+                            <div class="absolute left-32 h-7 bg-green-600/50 rounded-md border border-green-400/50" style="width: 500px;">
+                                <span class="text-xs text-white p-1 truncate">music_track_final.wav</span>
+                            </div>
+                        </div>
+                         <!-- A3 Track -->
+                        <div class="h-8 flex items-center relative">
+                            <!-- Empty track -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
-    <div id="sidebar">
-        <h1>🎥 ALIGHT MOTION PRO FREE</h1>
-        <p><strong>Editor completo com todas funções pagas liberadas</strong></p>
-        
-        <input type="file" id="upload" accept="video/*,image/*,audio/*">
-        
-        <div class="panel">
-            <button onclick="playPause()">▶ Play / Pause</button>
-            <button onclick="addLayer('video')">+ Vídeo Layer</button>
-            <button onclick="addLayer('image')">+ Imagem</button>
-            <button onclick="addLayer('text')">+ Texto Animado</button>
-            <button onclick="addLayer('shape')">+ Shape / Vector</button>
-        </div>
-
-        <div class="panel">
-            <h3>Efeitos Pro</h3>
-            <button onclick="addEffect('blur')">Gaussian Blur</button>
-            <button onclick="addEffect('chroma')">Chroma Key</button>
-            <button onclick="addEffect('glow')">Neon Glow</button>
-            <button onclick="addEffect('particle')">Partículas</button>
-            <button onclick="addEffect('transition')">Transições Épicas</button>
-        </div>
-
-        <div class="panel">
-            <h3>Camadas (Layers)</h3>
-            <div id="layersList"></div>
-        </div>
-
-        <div class="panel">
-            <h3>Timeline & Export</h3>
-            <input type="range" id="seek" min="0" max="100" value="0" style="width:100%;">
-            <button onclick="exportVideo()">EXPORT MP4 PRO (Sem Watermark)</button>
-        </div>
-
-        <p style="font-size:12px;">Peça qualquer feature nova (3D, tracking, etc) que eu adiciono instantaneamente.</p>
-    </div>
-</div>
-
-<script>
-// ==================== CORE ENGINE ====================
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const video = document.getElementById('vid');
-let layers = [];
-let isPlaying = false;
-let currentTime = 0;
-
-document.getElementById('upload').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    if (file.type.startsWith('video')) {
-        video.src = url;
-        video.onloadedmetadata = () => {
-            canvas.width = video.videoWidth || 1280;
-            canvas.height = video.videoHeight || 720;
-            addLayer('video', video);
-        };
-    } else {
-        const img = new Image();
-        img.src = url;
-        img.onload = () => addLayer('image', img);
-    }
-});
-
-function draw() {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    if (video && !video.paused) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    }
-
-    layers.forEach(layer => {
-        ctx.save();
-        if (layer.type === 'text') {
-            ctx.font = layer.font || 'bold 60px Arial';
-            ctx.fillStyle = layer.color || '#00ff00';
-            ctx.shadowColor = layer.glow || '#0ff';
-            ctx.shadowBlur = 25;
-            ctx.fillText(layer.text, layer.x || 100, layer.y || 200);
-        } else if (layer.type === 'image' && layer.img) {
-            ctx.drawImage(layer.img, layer.x || 100, layer.y || 100, layer.width || 400, layer.height || 300);
-        } else if (layer.type === 'shape') {
-            ctx.fillStyle = '#ff00ff';
-            ctx.fillRect(layer.x || 200, layer.y || 200, 300, 200);
+    <script>
+        // This script block contains mock-ups for Gemini API calls
+        // and UI tab switching logic.
+        
+        // --- API Configuration ---
+        const apiKey = "";
+        
+        // --- Utility Functions ---
+        
+        /**
+         * Displays a loading spinner in the target element.
+         * @param {HTMLElement} target - The element to show the spinner in.
+         */
+        function showSpinner(target) {
+            target.innerHTML = `<div class="flex justify-center items-center p-4"><div class="spinner"></div></div>`;
         }
-        ctx.restore();
-    });
-    requestAnimationFrame(draw);
-}
 
-draw();
+        /**
+         * Simulates a fetch call to the Gemini API for text generation.
+         * @param {string} prompt - The text prompt for the model.
+         * @returns {Promise<Object>} A mock API response.
+         */
+        async function callGemini_generateText(prompt) {
+            console.log("Calling Gemini (Text) with prompt:", prompt);
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate 1.5s network delay
+            
+            // --- MOCK RESPONSE ---
+            if (prompt.includes("Transcribe")) {
+                return { text: "Welcome to the Sigma VD tutorial. In this video, we're going to explore the new generative AI features. First, let's open the AI Tools panel... (Mock transcription)" };
+            } else if (prompt.includes("titles")) {
+                return { text: "1. Top 5 AI Editing Tricks\n2. Sigma VD: The Future of Editing\n3. My First Video Edit (Epic!)\n4. Why I Switched to Sigma VD\n5. Generative AI is Insane" };
+            } else if (prompt.includes("moments")) {
+                return { text: "00:30 - Feature Introduction\n01:15 - Key Point 1\n02:45 - Tutorial Start\n05:10 - Final Result" };
+            }
+            return { text: "No mock data for this prompt." };
+        }
 
-function playPause() {
-    if (video.paused) video.play();
-    else video.pause();
-}
+        /**
+         * Simulates a fetch call to the Imagen API for image generation.
+         * @param {string} prompt - The text prompt for the image model.
+         * @returns {Promise<Object>} A mock API response.
+         */
+        async function callGemini_generateImage(prompt) {
+            console.log("Calling Imagen (Image) with prompt:", prompt);
+            await new Promise(resolve => setTimeout(resolve, 2500)); // Simulate 2.5s network delay
+            
+            // --- MOCK RESPONSE ---
+            const placeholderUrl = `https://placehold.co/400x225/a855f7/ffffff?text=${encodeURIComponent(prompt.substring(0, 20) + '...')}`;
+            return { imageUrl: placeholderUrl };
+        }
+        
+        // --- Tab Switching Logic ---
+        
+        /**
+         * Sets up tab switching for a given set of tabs and content panels.
+         * @param {string} tabsSelector - CSS selector for the tab buttons.
+         * @param {string} contentSelector - CSS selector for the content panels.
+         */
+        function setupTabs(tabsSelector, contentSelector) {
+            const tabs = document.querySelectorAll(tabsSelector);
+            const contents = document.querySelectorAll(contentSelector);
 
-function addLayer(type, asset = null) {
-    let newLayer = {type, visible: true, opacity: 1, x: 100, y: 100};
-    
-    if (type === 'text') {
-        newLayer.text = prompt("Digite o texto:") || "ALIGHT MOTION PRO";
-        newLayer.color = '#00ff00';
-        newLayer.font = 'bold 60px Arial';
-    } else if (type === 'image' && asset) {
-        newLayer.img = asset;
-        newLayer.width = asset.width / 2;
-        newLayer.height = asset.height / 2;
-    } else if (type === 'video' && asset) {
-        newLayer.video = asset;
-    }
-    
-    layers.push(newLayer);
-    updateLayersList();
-}
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Deactivate all tabs and hide all content
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.add('hidden'));
 
-function addEffect(effect) {
-    if (layers.length === 0) {
-        alert("Adicione uma camada primeiro!");
-        return;
-    }
-    alert(`Efeito ${effect.toUpperCase()} PRO aplicado! (expansível - peça mais)`);
-}
+                    // Activate the clicked tab and show its content
+                    tab.classList.add('active');
+                    const contentId = tab.dataset.content;
+                    document.getElementById(contentId).classList.remove('hidden');
+                });
+            });
+        }
 
-function updateLayersList() {
-    const list = document.getElementById('layersList');
-    list.innerHTML = layers.map((layer, i) => `
-        <div class="layer-item">
-            <span>${layer.type} ${layer.text ? '- ' + layer.text : ''}</span>
-            <button onclick="removeLayer(${i})" style="width:auto;padding:4px 8px;">X</button>
-        </div>
-    `).join('');
-}
+        // Setup Right Panel Tabs (Inspector / AI)
+        setupTabs('#inspector-tab, #ai-tab', '#inspector-content, #ai-tools-content');
+        
+        // Setup Left Panel Tabs (Media / Effects / AI)
+        setupTabs('#media-tab, #effects-tab, #gen-ai-tab', '#media-content, #effects-content, #gen-ai-content');
 
-window.removeLayer = function(i) {
-    layers.splice(i, 1);
-    updateLayersList();
-};
 
-async function exportVideo() {
-    alert("Iniciando exportação em qualidade PRO...\n\nUsando Canvas + MediaRecorder");
-    
-    const stream = canvas.captureStream(60);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-    const chunks = [];
-    
-    recorder.ondataavailable = e => chunks.push(e.data);
-    recorder.onstop = () => {
-        const blob = new Blob(chunks, {type: 'video/webm'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `alight_pro_export_${Date.now()}.webm`;
-        a.click();
-        alert("Export concluído! (webm - converta para mp4 se precisar)");
-    };
-    
-    recorder.start();
-    setTimeout(() => {
-        recorder.stop();
-    }, 8000);
-}
-</script>
+        // --- AI Feature Event Listeners ---
+        
+        // 1. Generate Titles
+        const btnGenTitles = document.getElementById('btn-gen-titles');
+        const titleSuggestions = document.getElementById('title-suggestions');
+        
+        btnGenTitles.addEventListener('click', async () => {
+            showSpinner(titleSuggestions);
+            const prompt = "Generate 5 click-worthy video titles for a tech tutorial.";
+            const result = await callGemini_generateText(prompt);
+            
+            // Format mock response
+            const titles = result.text.split('\n');
+            titleSuggestions.innerHTML = titles.map(title => 
+                `<div class="p-2 bg-gray-700/50 rounded-md text-xs">${title}</div>`
+            ).join('');
+        });
+        
+        // 2. Generate Thumbnail
+        const btnGenThumb = document.getElementById('btn-gen-thumb');
+        const thumbPrompt = document.getElementById('thumb-prompt');
+        const thumbPreview = document.getElementById('thumbnail-preview');
+        
+        btnGenThumb.addEventListener('click', async () => {
+            const prompt = thumbPrompt.value || "A generic placeholder image";
+            showSpinner(thumbPreview);
+            const result = await callGemini_generateImage(prompt);
+            
+            if (result.imageUrl) {
+                thumbPreview.innerHTML = `<img src="${result.imageUrl}" alt="Generated Thumbnail" class="w-full rounded-md shadow-lg">`;
+            } else {
+                thumbPreview.innerHTML = `<p class="text-red-400">Error generating image.</p>`;
+            }
+        });
+
+        // 3. Transcribe Clip
+        const btnTranscribe = document.getElementById('btn-transcribe');
+        const transOutputContainer = document.getElementById('transcription-output-container');
+        const transOutput = document.getElementById('transcription-output');
+        
+        btnTranscribe.addEventListener('click', async () => {
+            showSpinner(transOutputContainer);
+            const prompt = "Transcribe the audio from the selected video clip.";
+            const result = await callGemini_generateText(prompt);
+            transOutputContainer.innerHTML = ''; // Clear spinner
+            transOutput.value = result.text; // Put text in textarea
+            transOutputContainer.appendChild(transOutput); // Add textarea back
+        });
+
+        // 4. Find Key Moments
+        const btnMoments = document.getElementById('btn-moments');
+        const momentsOutput = document.getElementById('moments-output');
+
+        btnMoments.addEventListener('click', async () => {
+            showSpinner(momentsOutput);
+            const prompt = "Analyze the transcription and find key moments with timestamps.";
+            const result = await callGemini_generateText(prompt);
+
+            // Format mock response
+            const moments = result.text.split('\n');
+            momentsOutput.innerHTML = moments.map(moment => 
+                `<div class="p-2 bg-gray-700/50 rounded-md text-xs">${moment}</div>`
+            ).join('');
+        });
+
+    </script>
 </body>
 </html>
